@@ -12,11 +12,11 @@ use re 'taint';
 #   and the configuration is included inline and a single file can be copied to many servers with all preferences already set
 #	Useful for environments of similar kind - for example many web or JEE app servers in my case.
 #
-#   Previous version:
+#   Previous version - 1.3:
 #     adapted by Nick Clarke - memorius@gmail.com - http://planproof-fool.blogspot.com/
 #     http://github.com/memorius/colorlogs/
 #
-#   Original version:
+#   Original version - 1.2:
 #     forked from v1.1 obtained from here, unknown license:
 #     http://www.resentment.org/projects/colorlogs/
 #

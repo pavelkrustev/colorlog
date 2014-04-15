@@ -30,28 +30,35 @@ use re 'taint';
 
 
 # define an array instead of an external config file -- for better mobility of the script:
+# regex \b signifies word boundary (whitespaces, etc). Used to match whole words only, not substrings
+
 my @config_patterns = (
 
-'BRIGHTRED      text:error',
-'GREEN          text:warn',
-'BRIGHTRED	text:exception',
-'BACKGROUNDCYAN	text:500',
+'GREEN          regex:\b200\b',				# HTTP prominent errorcodes
+'BACKGROUNDCYAN	regex:\b30[01234]\b',
+'BRIGHTRED		regex:\b404\b',
+'BACKGROUNDRED     regex:\b50[01234]\b',
 
-'BRIGHTYELLOW      prefix:[WARNING]' ,
+'BRIGHTYELLOW      prefix:[WARNING]' ,		# Java logging
 'GREEN             prefix:[INFO]' ,
 'BRIGHTBLACK       prefix:[DEBUG]' ,
 'BLUE              prefix:[TRACE]',
-'BACKGROUNDRED     regex:([Ee]rror|ERROR)[^-.]',
+'BACKGROUNDRED     regex:\[([Ee]rror|ERROR)\]',
+
+'BRIGHTRED      itext:error',
+'GREEN          itext:warn',
+'BRIGHTRED		itext:exception',
+
+'underlineblue              regex:(\d+)\.(\d+)\.(\d+)\.(\d+)', 		# IP address
 
 'BRIGHTGREEN       iregex:start(ed|ing)',
 'BRIGHTGREEN       iregex:stopp(ed|ing)',
 'BRIGHTYELLOW      regex:not (enabl|start)(ed|ing)',
 'BRIGHTGREEN       itext:running',
-'BRIGHTYELLOW      text:missing',
+'BRIGHTYELLOW      itext:missing',
 'BRIGHTYELLOW      text:unable',
 'BACKGROUNDRED     itext:invalid',
-'BACKGROUNDRED     iregex:failed'
-
+'BACKGROUNDRED     itext:failed'
 
 
 );
@@ -78,7 +85,7 @@ my %colorcodes = (
     'brightblack'        => "\033[01;30m",
     'brightred'          => "\033[01;31m",
     'brightgreen'        => "\033[01;32m",
-    'brightyellow'       => "\033[01;33m",
+    'brightyellow'       => "\033[01;40;33m",
     'brightblue'         => "\033[01;34m",
     'brightmagenta'      => "\033[01;35m",
     'brightcyan'         => "\033[01;36m",
@@ -100,7 +107,7 @@ my %colorcodes = (
     'blinkingcyan'       => "\033[05;36m", 
     'blinkingwhite'      => "\033[05;37m", 
     'backgroundblack'    => "\033[07;30m",
-    'backgroundred'      => "\033[07;31m",
+    'backgroundred'      => "\033[1;93;41m",
     'backgroundgreen'    => "\033[07;32m",
     'backgroundyellow'   => "\033[07;33m",
     'backgroundblue'     => "\033[07;34m",
@@ -254,9 +261,11 @@ sub colorize_and_output_line {
     # This shouldn't cost too much because we are still writing whole lines, not individual chars.
     foreach my $pattern (@patterns) {
         if ($line =~ /$pattern/) {
-            syswrite(STDOUT, "$pattern_colorcodes{$pattern}$line$default_color");
-            $line = '';
-            return;
+		
+			$line =~ s/($pattern)/$pattern_colorcodes{$pattern}$1$default_color/g;
+#            syswrite(STDOUT, "$pattern_colorcodes{$pattern}$line$default_color");
+#            $line = '';
+#            return;
         }
     }
 

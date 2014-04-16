@@ -3,17 +3,20 @@ use strict;
 use warnings;
 use re 'taint';
 
-# Requires module 'scriptname'. To install: 'sudo cpan' then run 'install scriptname' within cpan shell.
-use scriptname;
-
 # colorlogs.pl - A PERL script to colorize log viewing, command output etc
 #
 # Author:
-#   This version:
+#	This version - 1.4:
+#	Pavel Krustev - pavelkrustev[]gmail.com
+#	Made the script mobile - no external modules dependences 
+#   and the configuration is included inline and a single file can be copied to many servers with all preferences already set
+#	Useful for environments of similar kind - for example many web or JEE app servers in my case.
+#
+#   Previous version - 1.3:
 #     adapted by Nick Clarke - memorius@gmail.com - http://planproof-fool.blogspot.com/
 #     http://github.com/memorius/colorlogs/
 #
-#   Original version:
+#   Original version - 1.2:
 #     forked from v1.1 obtained from here, unknown license:
 #     http://www.resentment.org/projects/colorlogs/
 #
@@ -24,6 +27,47 @@ use scriptname;
 # WTFPL.txt for more details.
 #
 ##########################################################
+
+
+# define an array instead of an external config file -- for better mobility of the script:
+# regex \b signifies word boundary (whitespaces, etc). Used to match whole words only, not substrings
+
+my @config_patterns = (
+
+'GREEN          regex:\b200\b',				# HTTP prominent errorcodes
+'BACKGROUNDCYAN	regex:\b30[01234]\b',
+'BRIGHTRED		regex:\b404\b',
+'BACKGROUNDRED     regex:\b50[01234]\b',
+
+'BRIGHTYELLOW      prefix:[WARNING]' ,		# Java logging
+'GREEN             prefix:[INFO]' ,
+'BRIGHTBLACK       prefix:[DEBUG]' ,
+'BLUE              prefix:[TRACE]',
+'BACKGROUNDRED     regex:\[([Ee]rror|ERROR)\]',
+
+'BRIGHTRED      itext:error',
+'GREEN          itext:warn',
+'BRIGHTRED		itext:exception',
+
+'underlineblue              regex:(\d+)\.(\d+)\.(\d+)\.(\d+)', 		# IP address
+
+'BRIGHTGREEN       iregex:start(ed|ing)',
+'BRIGHTGREEN       iregex:stopp(ed|ing)',
+'BRIGHTYELLOW      regex:not (enabl|start)(ed|ing)',
+'BRIGHTGREEN       itext:running',
+'BRIGHTYELLOW      itext:missing',
+'BRIGHTYELLOW      text:unable',
+'BACKGROUNDRED     itext:invalid',
+'BACKGROUNDRED     itext:failed'
+
+
+);
+
+
+
+
+
+
 
 # How long to wait for a newline before outputting buffered partial lines unformatted
 my $unterminated_line_timeout_seconds = 0.75;
@@ -41,7 +85,7 @@ my %colorcodes = (
     'brightblack'        => "\033[01;30m",
     'brightred'          => "\033[01;31m",
     'brightgreen'        => "\033[01;32m",
-    'brightyellow'       => "\033[01;33m",
+    'brightyellow'       => "\033[01;40;33m",
     'brightblue'         => "\033[01;34m",
     'brightmagenta'      => "\033[01;35m",
     'brightcyan'         => "\033[01;36m",
@@ -63,7 +107,7 @@ my %colorcodes = (
     'blinkingcyan'       => "\033[05;36m", 
     'blinkingwhite'      => "\033[05;37m", 
     'backgroundblack'    => "\033[07;30m",
-    'backgroundred'      => "\033[07;31m",
+    'backgroundred'      => "\033[1;93;41m",
     'backgroundgreen'    => "\033[07;32m",
     'backgroundyellow'   => "\033[07;33m",
     'backgroundblue'     => "\033[07;34m",
@@ -136,9 +180,9 @@ sub escape_non_glob_regex_special_chars {
 
 # First commandline argument is the name of a config file from the same directory as this script,
 # without the 'conf' extension
-my $configfile = scriptname::mydir . "/config/$ARGV[0].conf";
-
-die "ERROR: Could not open config file '$configfile': $!, aborting" unless (-f $configfile);
+# not used as all configurations are now inline in the script itself for better mobility - Pavel
+#my $configfile = scriptname::mydir . "/config/$ARGV[0].conf";
+#die "ERROR: Could not open config file '$configfile': $!, aborting" unless (-f $configfile);
 
 # Regexes to match against the log text, in the order they are defined in the config file
 my @patterns;
@@ -147,8 +191,7 @@ my @patterns;
 my %pattern_colorcodes;
 
 # Read config
-open(CFG, $configfile);
-    while (<CFG>) {
+    foreach (@config_patterns) {
         chomp;
         # Chomp out the leading whitespace
         s/^\s*//;
@@ -205,8 +248,7 @@ open(CFG, $configfile);
                 die "ERROR: Unknown color name '$color_name' for config file entry '$_', aborting";
             }
         }
-    } # while
-close(CFG);
+    } # foreach
 
 my $line = '';
 my $default_color = $colorcodes{default};
@@ -219,9 +261,11 @@ sub colorize_and_output_line {
     # This shouldn't cost too much because we are still writing whole lines, not individual chars.
     foreach my $pattern (@patterns) {
         if ($line =~ /$pattern/) {
-            syswrite(STDOUT, "$pattern_colorcodes{$pattern}$line$default_color");
-            $line = '';
-            return;
+		
+			$line =~ s/($pattern)/$pattern_colorcodes{$pattern}$1$default_color/g;
+#            syswrite(STDOUT, "$pattern_colorcodes{$pattern}$line$default_color");
+#            $line = '';
+#            return;
         }
     }
 

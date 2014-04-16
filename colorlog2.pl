@@ -7,7 +7,7 @@ use re 'taint';
 #
 # Author:
 #	This version - 1.4:
-#	Pavel Krustev - pavelkrustev@gmail.com
+#	Pavel Krustev - pavelkrustev[]gmail.com
 #	Made the script mobile - no external modules dependences 
 #   and the configuration is included inline and a single file can be copied to many servers with all preferences already set
 #	Useful for environments of similar kind - for example many web or JEE app servers in my case.

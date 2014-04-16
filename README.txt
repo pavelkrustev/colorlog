@@ -56,6 +56,11 @@ Open the perl file itself (colorlogs.pl. Find the array describing all patterns:
 The rules are line-based and fairly self-explanatory,
 see example files in 'config/' directory for samples.
 
+To add a new line, type something like this
+(please mind the ending comma if there are more lines in the array after the new alarm:
+
+      'RED          text:newstring',
+
 The rules are applied in order - the first rule to match a given line is used.
 For available colors, see head of colorlogs.pl.
 

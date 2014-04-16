@@ -1,15 +1,26 @@
 ColorLogs - A PERL script to colorize log viewing, command output etc
 ---------------------------------------------------------------------
 
-Author:
--------
-This version:
-  adapted by Nick Clarke - memorius@gmail.com - http://planproof-fool.blogspot.com/
-  http://github.com/memorius/colorlogs/
+This version - 1.4:
 
-Original version:
-  forked from v1.1 obtained from here, unknown license:
-  http://www.resentment.org/projects/colorlogs/
+Pavel Krustev - pavelkrustev[]gmail.com
+Made the script mobile - no external modules dependences 
+and the configuration is included inline and a single file can be copied to many servers with all preferences already set
+Useful for environments of similar kind - for example many web or JEE app servers in my case.
+
+Previous version - 1.3:
+adapted by Nick Clarke - memorius@gmail.com - http://planproof-fool.blogspot.com/
+http://github.com/memorius/colorlogs/
+
+Original version - 1.2:
+forked from v1.1 obtained from here, unknown license:
+http://www.resentment.org/projects/colorlogs/
+
+This program is free software. It comes without any warranty, to
+the extent permitted by applicable law. You can redistribute it
+and/or modify it under the terms of the Do What The Fuck You Want
+To Public License, Version 2, as published by Sam Hocevar. See
+WTFPL.txt for more details.
 
 
 Requirements
@@ -17,9 +28,7 @@ Requirements
 Requires (obviously) a terminal that understands color escape codes.
 
 Requires perl 5.
-
-Requires perl module 'scriptname'.
-To install: 'sudo cpan' then run 'install scriptname' within cpan shell.
+No additional perl modules or other file dependences required.
 
 
 Usage:
@@ -32,36 +41,22 @@ You may also want to do the same with the 'color-ant' script (see below)
 
 Now to run:
 
-  <some-command-that-writes-stdout> | colorlogs <highlighting-config-file-name>
-
-e.g. this will run ant, sending all console output (including stderr)
-to colorlogs, and highlight with the rules in 'config/ant.conf'.
-
-  ant dist 2>&1 | colorlogs ant
-
-To make ant and maven provide colorlogs-processed output by default,
-using the colour patterns in ant.conf and maven.conf, I have this in my .bashrc:
-
-# Alias ant to provide colored output.
-function ant() {
-    command ant "$@" 2>&1 | colorlogs ant
-}
-
-# Alias maven to provide colored output.
-function mvn() {
-    command mvn "$@" 2>&1 | colorlogs maven
-}
+  <some-command-that-writes-stdout> | colorlogs
 
 
 Customizing the highlighting
 ----------------------------
-Create a file called <somename>.conf, in the 'config/' directory.
+Open the perl file itself (colorlogs.pl. Find the array describing all patterns:
+
+    my @config_patterns = (
+
+    'GREEN          regex:\b200\b',				# HTTP prominent errorcodes
+    .....
 
 The rules are line-based and fairly self-explanatory,
-see example files in 'config/' directory.
+see example files in 'config/' directory for samples.
 
-They are applied in order - the first rule to match a given line is used.
-
+The rules are applied in order - the first rule to match a given line is used.
 For available colors, see head of colorlogs.pl.
 
 
@@ -70,9 +65,3 @@ Using in scripts
 The script will try to detect when it is not running in a terminal and will
 just pipe its output verbatim if not - so it can still be used in pipelines,
 when redirecting output to a file, etc.
-
-Using the 'ant' and 'mvn' functions described above may not work in other scripts
-- I haven't figured out how to make them be inherited.
-So if you want color output when calling things indirectly,
-you can use the 'script-utils/color-ant' and 'script-utils/color-mvn' scripts,
-which do the same thing.

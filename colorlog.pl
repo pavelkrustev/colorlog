@@ -43,10 +43,10 @@ my @config_patterns = (
 'GREEN             prefix:[INFO]' ,
 'BRIGHTBLACK       prefix:[DEBUG]' ,
 'BLUE              prefix:[TRACE]',
-'BACKGROUNDRED     regex:\[([Ee]rror|ERROR)\]',
+'BACKGROUNDRED     regex:([Ee]rror|ERROR)',
 
-'BRIGHTRED      itext:error',
-'GREEN          itext:warn',
+'BRIGHTYELLOW   itext:notice',
+'BRIGHTYELLOW   itext:warn',
 'BRIGHTRED		itext:exception',
 
 'underlineblue              regex:(\d+)\.(\d+)\.(\d+)\.(\d+)', 		# IP address

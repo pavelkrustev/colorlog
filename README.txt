@@ -6,7 +6,7 @@ Adding HTML tags coloring as well. Intended to save the output in a file and vie
 Example use:
 tail -f SystemOut.log | colorlog.pl
 cat SystemOut.log | colorlog.pl -html > /tmp/SystemOut.log.html
-cat SystemOut.log | colorlog.pl -html | tee /tmp/SystemOut.log.html
+cat SystemOut.log | colorlog.pl -html | tee SystemOut.log.html
 
 Previous version - 1.4:
 Pavel Krustev - pavelkrustev[]gmail.com

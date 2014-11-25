@@ -1,16 +1,19 @@
 #!/usr/bin/perl -T
 use strict;
 use warnings;
-use re 'taint';
+#use re 'taint';
 
 # colorlogs.pl - A PERL script to colorize log viewing, command output etc
 #
 # Author:
-#	This version - 1.4:
+#	This version - 1.5:
 #	Pavel Krustev - pavelkrustev[]gmail.com
 #	Made the script mobile - no external modules dependences 
 #   and the configuration is included inline and a single file can be copied to many servers with all preferences already set
 #	Useful for environments of similar kind - for example many web or JEE app servers in my case.
+#
+#   Previous version - 1.4:
+#		Working with ANSI escape sequences only. Now adding HTML tags as well
 #
 #   Previous version - 1.3:
 #     adapted by Nick Clarke - memorius@gmail.com - http://planproof-fool.blogspot.com/
@@ -36,44 +39,39 @@ my @config_patterns = (
 
 'GREEN          regex:\b200\b',				# HTTP prominent errorcodes
 'BACKGROUNDCYAN	regex:\b30[01234]\b',
-'BRIGHTRED		regex:\b404\b',
+'BRIGHTYELLOW		regex:\b404\b',
 'BACKGROUNDRED     regex:\b50[01234]\b',
 
-'BRIGHTYELLOW      prefix:[WARNING]' ,		# Java logging
-'GREEN             prefix:[INFO]' ,
+'GREEN             prefix:[INFO]' ,			# Java logging
 'BRIGHTBLACK       prefix:[DEBUG]' ,
 'BLUE              prefix:[TRACE]',
 'BACKGROUNDRED     regex:([Ee]rror|ERROR)',
 
 'BRIGHTYELLOW   itext:notice',
-'BRIGHTYELLOW   itext:warn',
+'BRIGHTYELLOW   regex:w(a|)rn(ing|)',
 'BRIGHTRED		itext:exception',
+'BRIGHTYELLOW   itext:minor',
+'BRIGHTYELLOW   itext:major',
+'BRIGHTRED		itext:critical',
 
-'underlineblue              regex:(\d+)\.(\d+)\.(\d+)\.(\d+)', 		# IP address
+'underlineblue  regex:(\d+)\.(\d+)\.(\d+)\.(\d+)', 		# IP address
+'cyan           regex:(\d+):(\d+):(\d+)', 				# Time hh:mm:ss
 
-'BRIGHTGREEN       iregex:start(ed|ing)',
-'BRIGHTGREEN       iregex:stopp(ed|ing)',
-'BRIGHTYELLOW      regex:not (enabl|start)(ed|ing)',
+'BRIGHTRED         iregex:\bnot(_| )',
+'BRIGHTGREEN       iregex:(start|stopp)(ed|ing)',
 'BRIGHTGREEN       itext:running',
 'BRIGHTYELLOW      itext:missing',
 'BRIGHTYELLOW      text:unable',
 'BACKGROUNDRED     itext:invalid',
 'BACKGROUNDRED     itext:failed'
 
-
 );
-
-
-
-
-
-
 
 # How long to wait for a newline before outputting buffered partial lines unformatted
 my $unterminated_line_timeout_seconds = 0.75;
 
 # Create the colorcodes Assoc. Array
-my %colorcodes = (
+my %ansi_colorcodes = (
     'black'              => "\033[30m",
     'red'                => "\033[31m",
     'green'              => "\033[32m",
@@ -116,6 +114,98 @@ my %colorcodes = (
     'backgroundwhite'    => "\033[07;37m", 
     'default'            => "\033[0m"
 );
+
+my %html_colorcodes = (
+    'black'              => "<span class=black>",
+    'red'                => "<span class=red>",
+    'green'              => "<span class=green>",
+    'yellow'             => "<span class=yellow> ", 
+    'blue'               => "<span class=blue> ", 
+    'magenta'            => "<span class=magenta> ",
+    'cyan'               => "<span class=cyan> ", 
+    'white'              => "<span class=white> ",
+    'brightblack'        => "<span class=brightblack> ",
+    'brightred'          => "<span class=brightred>",
+    'brightgreen'        => "<span class=brightgreen>",
+    'brightyellow'       => "<span class=brightyellow>",
+    'brightblue'         => "<span class=brightblue>",
+    'brightmagenta'      => "<span class=brightmagenta>",
+    'brightcyan'         => "<span class=brightcyan>",
+    'brightwhite'        => "<span class=brightwhite>",
+    'underlineblack'     => "<span class=underlineblack>",
+    'underlinered'       => "<span class=underlinered>",
+    'underlinegreen'     => "<span class=underlinegreen>",
+    'underlineyellow'    => "<span class=underlineyellow>",
+    'underlineblue'      => "<span class=underlineblue>",
+    'underlinemagenta'   => "<span class=underlinemagenta>",
+    'underlinecyan'      => "<span class=underlinecyan>",
+    'underlinewhite'     => "<span class=underlinewhite>",
+    'blinkingblack'      => "<span class=blinkingblack>",
+    'blinkingred'        => "<span class=blinkingred>",
+    'blinkinggreen'      => "<span class=blinkinggreen>",
+    'blinkingyellow'     => "<span class=blinkingyellow>",
+    'blinkingblue'       => "<span class=blinkingblue>",
+    'blinkingmagenta'    => "<span class=blinkingmagenta>",
+    'blinkingcyan'       => "<span class=blinkingcyan>",
+    'blinkingwhite'      => "<span class=blinkingwhite>",
+    'backgroundblack'    => "<span class=backgroundblack>",
+    'backgroundred'      => "<span class=backgroundred>",
+    'backgroundgreen'    => "<span class=backgroundgreen>",
+    'backgroundyellow'   => "<span class=backgroundyellow>",
+    'backgroundblue'     => "<span class=backgroundblue>",
+    'backgroundmagenta'  => "<span class=backgroundmagenta>",
+    'backgroundcyan'     => "<span class=backgroundcyan>",
+    'backgroundwhite'    => "<span class=backgroundwhite>",
+    'default'            => "</span>"
+);
+
+my $html_header = '<head>
+<style type="text/css">
+.black              { color:black; }
+.red                { color:red; }
+.green              { color:green; }
+.yellow             { color:yellow; }
+.blue               { color:blue; }
+.magenta            { color:magenta; }
+.cyan               { color:cyan; }
+.white              { color:white; }
+.brightblack        { color:lightblack; }
+.brightred          { color:lightred; }
+.brightgreen        { color:lightgreen; }
+.brightyellow       { color:lightyellow; }
+.brightblue         { color:lightblue; }
+.brightmagenta      { color:lightmagenta; }
+.brightcyan         { color:lightcyan; }
+.brightwhite        { color:lightwhite; }
+.underlineblack     { text-decoration: underline; color:black; }
+.underlinered       { text-decoration: underline; color:red; }
+.underlinegreen     { text-decoration: underline; color:green; }
+.underlineyellow    { text-decoration: underline; color:yellow; }
+.underlineblue      { text-decoration: underline; color:blue; }
+.underlinemagenta   { text-decoration: underline; color:magenta; }
+.underlinecyan      { text-decoration: underline; color:cyan; }
+.underlinewhite     { text-decoration: underline; color:white; }
+.blinkingblack      { text-decoration: blink; color:blinkingblack; } 
+.blinkingred        { text-decoration: blink; color:blinkingred; } 
+.blinkinggreen      { text-decoration: blink; color:blinkinggreen; } 
+.blinkingyellow     { text-decoration: blink; color:blinkingyellow; } 
+.blinkingblue       { text-decoration: blink; color:blinkingblue; } 
+.blinkingmagenta    { text-decoration: blink; color:blinkingmagenta; } 
+.blinkingcyan       { text-decoration: blink; color:blinkingcyan; } 
+.blinkingwhite      { text-decoration: blink; color:blinkingwhite; } 
+.backgroundblack    { color:white; background-color: black; }
+.backgroundred      { color:black; background-color: red; }
+.backgroundgreen    { color:black; background-color: green; }
+.backgroundyellow   { color:black; background-color: yellow; }
+.backgroundblue     { color:black; background-color: blue; }
+.backgroundmagenta  { color:black; background-color: magena; }
+.backgroundcyan     { color:black; background-color: cyan; }
+.backgroundwhite    { color:black; background-color: white; } 
+.default            { color:white; background-color: black; }         
+body {color:white; background-color: black; line-height:1em; }
+</style></head>
+<body><pre>
+';
 
 # Convert to a regex by replacing regex-meaningful chars
 sub escape_regex_special_chars {
@@ -178,6 +268,29 @@ sub escape_non_glob_regex_special_chars {
     s/\./\\\./g;
 }
 
+
+# parse command line parameters to decide if html or ansi esc codes are to be used:
+
+my %colorcodes;
+
+if (@ARGV > 0) {
+	if ($ARGV[0] eq '-html') {
+		%colorcodes = %html_colorcodes;
+		syswrite(STDOUT, $html_header);
+	} else {
+		print "\nTransparently pass-through text from STDIN to STDOUT.\nColor some special words for better readability.\nSupports ANSI esc sequences or HTML tags\n\n";
+		print "Usage: some_command | ".$0." [-html]\n\n";
+		print "Example1: tail -f SystemOut.log | ".$0."\n"; 
+		print "Example2: cat SystemOut.log | ".$0." -html > /tmp/SystemOut.log.html\n";
+		print "Example3: tail -f SystemOut.log | ".$0." -html | tee /tmp/SystemOut.log.html\n\n";
+		exit;
+	}
+} else {
+		%colorcodes = %ansi_colorcodes;
+}
+
+
+
 # First commandline argument is the name of a config file from the same directory as this script,
 # without the 'conf' extension
 # not used as all configurations are now inline in the script itself for better mobility - Pavel
@@ -189,6 +302,7 @@ my @patterns;
 
 # Mapping from pattern to color codes
 my %pattern_colorcodes;
+
 
 # Read config
     foreach (@config_patterns) {
@@ -274,7 +388,6 @@ sub colorize_and_output_line {
     $line = '';
 }
 
-if (-t STDOUT) {
     # Output is to a terminal.
     # Read STDIN and output lines with appropriate formatting
     my $char;
@@ -290,7 +403,7 @@ if (-t STDOUT) {
         # Check whether any input is available to read, waiting for timeout otherwise
         $nfound = select(($rout = $rin), undef, undef, $unterminated_line_timeout_seconds);
         if ($nfound > 0) {
-            # Some input is ready, read one char
+            # Somke input is ready, read one char
             $nread = sysread(STDIN, $char, 1);
             if ($nread > 0) {
                 # Got a character
@@ -321,9 +434,3 @@ if (-t STDOUT) {
             die "ERROR: select failed on STDIN: $!, aborting";
         }
     }
-} else {
-    # Output is piped or redirected - disable colors, use line-based buffered IO
-    while ($line = <STDIN>) {
-        print "$line";
-    }
-}

@@ -1,12 +1,19 @@
 ColorLogs - A PERL script to colorize log viewing, command output etc
 ---------------------------------------------------------------------
+This version - 1.5:
+Pavel Krustev - pavelkrustev[]gmail.com
+Adding HTML tags coloring as well. Intended to save the output in a file and view it later in a browser.
+Example use:
+tail -f SystemOut.log | colorlog.pl
+cat SystemOut.log | colorlog.pl -html > /tmp/SystemOut.log.html
+cat SystemOut.log | colorlog.pl -html | tee /tmp/SystemOut.log.html
 
-This version - 1.4:
-
+Previous version - 1.4:
 Pavel Krustev - pavelkrustev[]gmail.com
 Made the script mobile - no external modules dependences 
 and the configuration is included inline and a single file can be copied to many servers with all preferences already set
 Useful for environments of similar kind - for example many web or JEE app servers in my case.
+Working with ANSI escape sequences only. 
 
 Previous version - 1.3:
 adapted by Nick Clarke - memorius@gmail.com - http://planproof-fool.blogspot.com/
